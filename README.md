@@ -1,5 +1,9 @@
 # Unzip Streaming Library
 
+## BETA NOTICE
+
+This library is **heavily** under development, and may not work. It will also be updated often. At this time, I don't recommend including it in your projects (yet).
+
 ## Overview
 
 Although unzipping a streamed zip file is considered out of spec, it can be done reliably and is a common use case. Often zip files are so large that storing them in memory is not an option, and in many deployments storing them (even temporarily) in the file system is not possible. For this scenario, unzipping the stream is the only option.

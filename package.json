@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "TODO"
+    "url": "https://github.com/nopersonalspace/sunzip"
   },
   "keywords": [
     "npm",
@@ -53,12 +53,12 @@
     "example",
     "demonstration"
   ],
-  "author": "Snyk Labs",
+  "author": "Harris McCullers",
   "license": "MIT",
   "bugs": {
-    "url": "TODO"
+    "url": "https://github.com/nopersonalspace/sunzip/issues"
   },
-  "homepage": "TODO",
+  "homepage": "https://github.com/nopersonalspace/sunzip",
   "devDependencies": {
     "@types/chai": "^4.3.3",
     "@types/chai-as-promised": "^7.1.5",
