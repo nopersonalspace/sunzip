@@ -83,12 +83,6 @@ module.exports = {
     "unicorn/explicit-length-check": "error",
 
     "no-underscore-dangle": "off",
-
-    /**
-     * TS allows for public syntax in constructor to make a constructor
-     * parameter assigned to the class instance. We use this often and so
-     * the constructor is often empty
-     */
     "no-useless-constructor": 0,
 
     /** Bad import rules, ignore them */
@@ -127,7 +121,7 @@ module.exports = {
     "import/no-webpack-loader-syntax": ["error"],
 
     /**
-     * No console logs anywhere. They are bad and should only be used for debugging.
+     * No console logs anywhere.
      */
     "no-console": ["error"],
 
@@ -155,7 +149,7 @@ module.exports = {
     /** Generator functions should call `yield` */
     "require-yield": ["error"],
 
-    /** Prefer for-of to for loop (in general we prefer map/forEach over for of as well) */
+    /** Prefer for-of to for loop */
     "@typescript-eslint/prefer-for-of": ["error"],
 
     /** Should not alias this to another command */
@@ -194,7 +188,7 @@ module.exports = {
     /** We want to eventually turn this to an error */
     "@typescript-eslint/ban-types": ["warn"],
 
-    /** We disagree with these rules that are configured by eslint-config-preact */
+    /** eslint-config-preact overrides */
     "constructor-super": "off",
     "no-redeclare": "off",
     "no-duplicate-imports": "off",
@@ -209,23 +203,8 @@ module.exports = {
     "mocha/no-exclusive-tests": "error",
   },
   overrides: [
-    // ///////// //
-    // overrides //
-    // ///////// //
     /**
-     * Hooks modify their local parameters often, and so param
-     * reassignments are allowed. Also the jsdoc comments are not
-     * needed.
-     */
-    {
-      files: ["**/hooks.ts"],
-      rules: {
-        "no-param-reassign": 0,
-      },
-    },
-    /**
-     * Javascript files can ignore type requirements as we typically want to
-     * migrate these js files to typescript at some point.
+     * Javascript files can ignore type requirements
      */
     {
       files: ["*.js"],
@@ -234,36 +213,14 @@ module.exports = {
       },
     },
     /**
-     * In test files, we allow them to be a bit longer than our
-     * typically max-lines rule. In addition, nock has a lot of unassigned
-     * values and often look unused when they are not.
+     * In test files, we allow them to be a bit longer
      */
     {
-      files: ["**/*.test.ts"],
+      files: ["**/*.spec.ts"],
       rules: {
         "no-unused-expressions": 0,
         // Give a bit more leeway in test files
         "max-lines": ["warn", 450],
-      },
-    },
-    /**
-     * TSX files are all props and state so jsdoc
-     * params and returns are often redundant
-     */
-    {
-      files: ["**/*.tsx"],
-      rules: {
-        "no-empty-pattern": 0,
-      },
-    },
-    /**
-     * These are react components but the props types are defined explicitly
-     * and so the extra comment is almost always redundant
-     */
-    {
-      files: ["**/wrappers.ts"],
-      rules: {
-        "no-empty-pattern": 0,
       },
     },
     {
@@ -277,8 +234,6 @@ module.exports = {
               ["^\\u0000"],
               // Anything not matched in another group.
               ["^"],
-              // @main imports.
-              ["^@main/"],
               // Relative imports.
               ["^\\."],
             ],
