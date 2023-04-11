@@ -1,6 +1,13 @@
-# Unzip Streaming Library
+# Unzippopotamus
+<p align="center" width="100%">
+    <img width="33%" src="https://user-images.githubusercontent.com/740503/231022914-a150c0ea-4e67-4779-838f-ded270ddd9c3.svg">
+</p>
+<p align="center">
+  <img alt="npm" src="https://img.shields.io/npm/v/unzippopotamus">
+  <img alt="NPM" src="https://img.shields.io/npm/l/unzippopotamus">
+</p>
 
-## BETA NOTICE
+## ALPHA NOTICE
 
 This library is **heavily** under development, and may not work. It will also be updated often. At this time, I don't recommend including it in your projects (yet).
 
