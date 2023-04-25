@@ -1,11 +1,9 @@
+/* eslint-disable max-lines */
 import { Parser as BinaryParser } from "binary-parser";
-import { PassThrough, Transform, TransformCallback } from "stream";
+import { PassThrough, pipeline, Transform, TransformCallback } from "stream";
 import zlib from "zlib";
 
 import { InvalidZipError } from "./errors";
-
-// Length of the local file header should not exceed this value
-const LOCAL_FILE_HEADER_MAX_BYTES = 500;
 
 export interface OutStream {
   stream: PassThrough;
@@ -19,6 +17,7 @@ export interface OutStream {
 enum Mode {
   LocalFileHeader = "LOCAL_FILE_HEADER",
   FileData = "FILE_DATA",
+  CentralDirectory = "CENTRAL_DIRECTORY",
   // Used while searching for a signature to switch into another mode
   ReadingNextFlag = "READING_NEXT_FLAG",
   // If a flag can't be parsed from the data, then we enter this mode
@@ -44,9 +43,11 @@ export class UnzipStream extends Transform {
 
   mode: Mode;
 
+  beforeFirstData = true;
+
   // TODO: We need the ability to pass in arguments
   constructor() {
-    super({ objectMode: true });
+    super({ objectMode: true, highWaterMark: 50 });
 
     this.outStreamInfo = {
       stream: new PassThrough(), // for now, we'll make the output stream a new pass through
@@ -59,7 +60,7 @@ export class UnzipStream extends Transform {
 
     this.entry = new PassThrough();
 
-    this.mode = Mode.LocalFileHeader;
+    this.mode = Mode.ReadingNextFlag;
   }
 
   /**
@@ -71,18 +72,11 @@ export class UnzipStream extends Transform {
   assembleLocalFileHeader(
     bytes = Buffer.concat(this.chunks)
   ): Record<string, any> | undefined {
-    // Don't keep searching forever. If we still can't find/parse this after a while
-    // then give up. The file is probably improperly formatted
-    if (bytes.length > LOCAL_FILE_HEADER_MAX_BYTES) {
-      throw new InvalidZipError("Could not find local file header");
-    }
-
     // TODO: make a case here, if the first bytes are not the sig then we have a problem.
-
     // See https://libzip.org/specifications/appnote_iz.txt for more information about the zip spec
     const localFileHeaderParser = new BinaryParser()
       .endianness("little")
-      .bit32("signature")
+      .buffer("signature", { length: 4 })
       .uint16("versionsNeededToExtract")
       .uint16("bitFlag")
       .uint16("compressionMethod")
@@ -105,7 +99,11 @@ export class UnzipStream extends Transform {
       .buffer("rest", { readUntil: "eof" });
 
     try {
-      return localFileHeaderParser.parse(bytes);
+      const localFileHeader = localFileHeaderParser.parse(bytes);
+      if (localFileHeader.signature.equals(Buffer.from("504B0304", "hex"))) {
+        return localFileHeader;
+      }
+      return undefined;
     } catch (e) {
       // If the parser fails because it runs out of bytes, then we need to
       // consume more bytes until it has enough. If it's a different error
@@ -132,6 +130,10 @@ export class UnzipStream extends Transform {
       if (flag.equals(Buffer.from("504B0304", "hex"))) {
         return Mode.LocalFileHeader;
       }
+
+      if (flag.equals(Buffer.from("504B0102", "hex"))) {
+        return Mode.CentralDirectory;
+      }
       return Mode.Unknown;
     } catch (e) {
       // Keep going until we have enough bytes to parse a flag. Should only ever
@@ -150,58 +152,102 @@ export class UnzipStream extends Transform {
       // We want to emit an empty stream with just the metadata
       this.emit("entry", {
         ...this.outStreamInfo,
-        stream: new PassThrough(),
+        stream: null,
       });
+
       return;
     }
     if (this.outStreamInfo.fileMetadata.compressionMethod > 0) {
       this.entry = new PassThrough();
       const inflater = zlib.createInflateRaw();
-
       // inflater
       //   .on("end", () => {
-      //     console.log("STREAM ENDED - inflater");
+      //     console.log(
+      //       "STREAM ENDED - inflater",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("finish", () => {
-      //     console.log("STREAM FINISHED - inflater");
+      //     console.log(
+      //       "STREAM FINISHED - inflater",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("close", () => {
-      //     console.log("STREAM CLOSED - inflater");
+      //     console.log(
+      //       "STREAM CLOSED - inflater",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
-      //   .on("error", () => {
-      //     console.log("STREAM ERROR - inflater");
+      //   .on("error", (e) => {
+      //     console.log(
+      //       "STREAM ERROR - inflater",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   });
       // this.outStreamInfo.stream
       //   .on("end", () => {
-      //     console.log("STREAM ENDED - outStreamInfo.stream");
+      //     console.log(
+      //       "STREAM ENDED - outStreamInfo.stream",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("finish", () => {
-      //     console.log("STREAM FINISHED - outStreamInfo.stream");
+      //     console.log(
+      //       "STREAM FINISHED - outStreamInfo.stream",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("close", () => {
-      //     console.log("STREAM CLOSED - outStreamInfo.stream");
+      //     console.log(
+      //       "STREAM CLOSED - outStreamInfo.stream",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("error", () => {
-      //     console.log("STREAM ERROR - outStreamInfo.stream");
+      //     console.log(
+      //       "STREAM ERROR - outStreamInfo.stream",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   });
 
       // this.entry
       //   .on("end", () => {
-      //     console.log("STREAM ENDED - entry");
+      //     console.log(
+      //       "STREAM ENDED - entry",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("finish", () => {
-      //     console.log("STREAM FINISHED - entry");
+      //     console.log(
+      //       "STREAM FINISHED - entry",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("close", () => {
-      //     console.log("STREAM CLOSED - entry");
+      //     console.log(
+      //       "STREAM CLOSED - entry",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   })
       //   .on("error", () => {
-      //     console.log("STREAM ERROR - entry");
+      //     console.log(
+      //       "STREAM ERROR - entry",
+      //       this.outStreamInfo.fileMetadata.fileName
+      //     );
       //   });
 
-      this.outStreamInfo.stream.pipe(inflater).pipe(this.entry);
+      pipeline(this.outStreamInfo.stream, inflater, this.entry, (e) => {
+        if (e) {
+          this.emit("error", e);
+        }
+      });
     } else {
-      this.outStreamInfo.stream.pipe(this.entry);
+      pipeline(this.outStreamInfo.stream, this.entry, (e) => {
+        if (e) {
+          this.emit("error", e);
+        }
+      });
     }
 
     this.emit("entry", {
@@ -210,16 +256,21 @@ export class UnzipStream extends Transform {
     });
   }
 
-  _processNextChunk(encoding: BufferEncoding, callback: () => void): void {
+  _processNextChunk(
+    encoding: BufferEncoding,
+    callback: TransformCallback
+  ): void {
     // Perform relevant actions, depending on the state
     switch (this.mode) {
       case Mode.ReadingNextFlag: {
         const mode = this._stateFromFlag(Buffer.concat(this.chunks));
         this.mode = mode;
+
+        this._processNextChunk(encoding, callback);
+
+        break;
       }
 
-      // We don't want to 'break' here, as we just set the state using _stateFromFlag
-      // eslint-disable-next-line no-fallthrough
       case Mode.LocalFileHeader: {
         // Reset output stream
         this.outStreamInfo = {
@@ -254,7 +305,9 @@ export class UnzipStream extends Transform {
           this.chunks = [localFileHeader.rest];
 
           this._createEntryStream();
-          this._processNextChunk(encoding, callback);
+
+          // get the next chunk
+          callback();
         } else {
           // We need more chunks of data in the moving window before
           // we can find the complete localFileHeader
@@ -264,7 +317,6 @@ export class UnzipStream extends Transform {
         break;
       }
       case Mode.FileData: {
-        // Mock streaming out the chunks by printing
         const allBuffer = Buffer.concat(this.chunks);
 
         // Slice the file out of the buffer
@@ -285,15 +337,22 @@ export class UnzipStream extends Transform {
 
         // Reset the chunks, since we've passed the data along
         this.chunks = [];
+        // TODO: What happens if it's exactly 0?
         if (rest.length > 0) {
           // End file output stream
-          this.entry.end(undefined, encoding);
+          // this.entry.end(undefined, encoding);
           this.outStreamInfo.stream.end(undefined, encoding);
 
           // Queue up next state
           this.mode = Mode.ReadingNextFlag;
           this.chunks = [rest];
         }
+        break;
+      }
+      case Mode.CentralDirectory: {
+        // For now, we ignore the current chunk and move on
+        this.chunks = [];
+        callback();
         break;
       }
       default:
@@ -310,6 +369,15 @@ export class UnzipStream extends Transform {
     callback: TransformCallback
   ): void {
     try {
+      // Special case, if no data has been read yet then we know the
+      // first bytes should be the local file header signature
+      if (this.beforeFirstData) {
+        if (this._stateFromFlag(chunk) !== Mode.LocalFileHeader) {
+          throw new InvalidZipError("Not a valid zip file");
+        }
+        this.beforeFirstData = false;
+      }
+
       // Start by pushing the new chunks to the buffer
       this.chunks.push(chunk);
 
@@ -320,9 +388,8 @@ export class UnzipStream extends Transform {
   }
 
   _flush(callback: any): any {
-    console.log("calling flush", this.mode);
+    // TODO: Getting a 'BAD FILE DESCRIPTOR' error when the central directory is hit
     if (Buffer.concat(this.chunks).length > 0) {
-      console.log("flush more chunks to process");
       this._processNextChunk("buffer" as BufferEncoding, () => {
         if (Buffer.concat(this.chunks).length > 0) {
           return setImmediate(() => {
@@ -330,6 +397,7 @@ export class UnzipStream extends Transform {
           });
         }
         callback();
+        return undefined;
       });
 
       return;
@@ -343,7 +411,6 @@ export class UnzipStream extends Transform {
       return;
     }
     if (this.mode === Mode.LocalFileHeader) {
-      console.log("in this case");
       // This will happen when a file is too small to overflow the max buffer size,
       // but a local header wasn't found anywhere.
       callback(new InvalidZipError("Unable to find local header"));
@@ -353,3 +420,4 @@ export class UnzipStream extends Transform {
     setImmediate(callback);
   }
 }
+/* eslint-enable max-lines */

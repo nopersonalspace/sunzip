@@ -61,11 +61,16 @@
   },
   "homepage": "https://github.com/nopersonalspace/unzippopotamus",
   "devDependencies": {
+    "@types/adm-zip": "^0.5.0",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
     "@types/expect": "^24.3.0",
+    "@types/mkdirp": "^2.0.0",
+    "@types/mkpath": "^0.1.29",
+    "@types/mock-fs": "^4.13.1",
     "@types/node": "^18.11.18",
     "@types/prettier": "^2",
+    "@types/yauzl": "^2.10.0",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "chai": "^4.3.6",
@@ -87,7 +92,13 @@
   "dependencies": {
     "@types/chai": "^4.3.4",
     "@types/mocha": "^9.1.1",
+    "adm-zip": "^0.5.10",
     "binary-parser": "^2.2.1",
-    "chai-as-promised": "^7.1.1"
+    "chai-as-promised": "^7.1.1",
+    "chalk": "^4.1.2",
+    "memfs": "^3.5.0",
+    "mkdirp": "^3.0.0",
+    "mock-fs": "^5.2.0",
+    "yauzl": "^2.10.0"
   }
 }
