@@ -207,7 +207,7 @@ module.exports = {
      * Javascript files can ignore type requirements
      */
     {
-      files: ["*.js"],
+      files: ["*.js", "*.mjs"],
       rules: {
         "@typescript-eslint/explicit-function-return-type": 0,
       },

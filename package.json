@@ -1,33 +1,32 @@
 {
   "name": "unzippopotamus",
-  "version": "0.0.0-development",
+  "version": "1.0.0-alpha",
   "description": "A simple interface for unzipping zip file streams",
-  "module": "commonjs",
   "exports": {
     ".": {
       "import": {
-        "types": "./lib/esm/types/index.d.ts",
-        "default": "./lib/esm/index.mjs"
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.mjs"
       },
       "require": {
-        "types": "./lib/cjs/types/index.d.ts",
-        "default": "./lib/cjs/index.js"
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
       }
     }
   },
   "types": "./lib/cjs/types/index.d.ts",
-  "main": "./lib/cjs/index.js",
+  "main": "./lib/index.js",
+  "module": "./lib/index.mjs",
   "files": [
     "lib/**/*"
   ],
   "scripts": {
     "clean": "rm -rf ./lib",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc -p ./configs/tsconfig.esm.json && mv lib/esm/index.js lib/esm/index.mjs",
-    "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
+    "build": "npm run clean && rollup --config",
     "test": "mocha",
     "semantic-release": "semantic-release",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "depcheck": "node scripts/depcheck.js"
   },
   "release": {
     "branches": [
@@ -87,19 +86,25 @@
   "devDependencies": {
     "@semantic-release/git": "^10.0.1",
     "@types/adm-zip": "^0.5.0",
+    "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
     "@types/expect": "^24.3.0",
     "@types/mkdirp": "^2.0.0",
     "@types/mkpath": "^0.1.29",
+    "@types/mocha": "^10.0.1",
     "@types/mock-fs": "^4.13.1",
     "@types/node": "^18.11.18",
     "@types/prettier": "^2",
     "@types/yauzl": "^2.10.0",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
+    "adm-zip": "^0.5.10",
     "chai": "^4.3.6",
+    "depcheck": "^1.4.3",
+    "esbuild": "^0.17.18",
     "eslint": "^8.38.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "^2.5.0",
@@ -111,21 +116,19 @@
     "mocha": "^10.0.0",
     "prettier": "^2.6.2",
     "promisify": "0.0.3",
+    "rollup": "^3.21.0",
+    "rollup-plugin-dts": "^5.3.0",
+    "rollup-plugin-esbuild": "^5.0.0",
+    "rollup-plugin-includepaths": "^0.2.4",
     "semantic-release": "^21.0.1",
     "semantic-release-unsquash": "^0.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@types/chai": "^4.3.4",
-    "@types/mocha": "^9.1.1",
-    "adm-zip": "^0.5.10",
     "binary-parser": "^2.2.1",
     "chai-as-promised": "^7.1.1",
-    "chalk": "^4.1.2",
     "memfs": "^3.5.0",
-    "mkdirp": "^3.0.0",
-    "mock-fs": "^5.2.0",
     "yauzl": "^2.10.0"
   }
 }
