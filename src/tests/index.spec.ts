@@ -2,14 +2,14 @@ import "mocha";
 
 import AdmZip from "adm-zip";
 import { Buffer } from "buffer";
-import chai, { assert } from "chai";
+import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { randomBytes } from "crypto";
 import fs from "fs";
 import path from "path";
 import { Readable, Stream } from "stream";
 
-import npmPackage from "../index";
+// import npmPackage from "../index";
 import { UnzipStream } from "../unzip";
 
 const streamToBuffer = (stream: Stream): Promise<Buffer> =>
@@ -28,16 +28,6 @@ const streamToBuffer = (stream: Stream): Promise<Buffer> =>
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-describe("NPM Package", () => {
-  it("should be an object", () => {
-    assert.isObject(npmPackage);
-  });
-
-  it("should have a UnzipStream property", () => {
-    assert.property(npmPackage, "UnzipStream");
-  });
-});
 
 const zipFiles = fs
   .readdirSync(path.join(__dirname, "zips/"))

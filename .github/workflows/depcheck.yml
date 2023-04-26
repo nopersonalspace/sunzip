@@ -1,0 +1,22 @@
+name: depcheck
+
+on:
+  workflow_call:
+  pull_request:
+
+jobs:
+  depcheck:
+    runs-on: ubuntu-latest
+    steps:
+      # - uses: actions/checkout@v2
+      # - name: depcheck
+      #   uses: tj-actions/depcheck@v9
+      #   with:
+      #     ignores: "eslint-import-resolver-project"
+      - uses: actions/checkout@v3
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: "14.x"
+      - run: npm install
+      - run: npm run depcheck
