@@ -1,6 +1,6 @@
 {
   "name": "unzippopotamus",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0-alpha.1",
   "description": "A simple interface for unzipping zip file streams",
   "exports": {
     ".": {
