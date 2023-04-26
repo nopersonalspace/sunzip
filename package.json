@@ -1,6 +1,6 @@
 {
   "name": "unzippopotamus",
-  "version": "1.1.0-alpha",
+  "version": "0.0.0-development",
   "description": "A simple interface for unzipping zip file streams",
   "module": "commonjs",
   "exports": {
@@ -41,6 +41,21 @@
         "name": "alpha",
         "prerelease": true
       }
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ]
     ]
   },
   "publishConfig": {
@@ -70,6 +85,9 @@
   },
   "homepage": "https://github.com/nopersonalspace/unzippopotamus",
   "devDependencies": {
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/release-notes-generator": "^10.0.3",
     "@types/adm-zip": "^0.5.0",
     "@types/chai-as-promised": "^7.1.5",
     "@types/eslint": "^8",
@@ -95,6 +113,8 @@
     "mocha": "^10.0.0",
     "prettier": "^2.6.2",
     "promisify": "0.0.3",
+    "semantic-release": "^21.0.1",
+    "semantic-release-unsquash": "^0.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.7.4"
   },
