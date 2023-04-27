@@ -8,6 +8,7 @@ module.exports = {
     "airbnb-base",
     "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended",
+    "plugin:jsdoc/recommended",
     "plugin:eslint-comments/recommended",
     "prettier",
   ],
@@ -20,6 +21,7 @@ module.exports = {
   plugins: [
     "import",
     "@typescript-eslint",
+    "jsdoc",
     "simple-import-sort",
     "unicorn",
     "mocha",
@@ -54,6 +56,10 @@ module.exports = {
     "object-property-newline": 0,
     "brace-style": 0,
     "no-nested-ternary": 0,
+
+    /** no types required because typescript */
+    "jsdoc/require-returns-type": 0,
+    "jsdoc/require-param-type": 0,
 
     /** handled by no-restricted-syntax */
     "guard-for-in": 0,
@@ -165,14 +171,12 @@ module.exports = {
      * If there are more than 4 arguments in a function, it should be refactored
      * to have fewer arguments. The easiest way of doing this is to create an
      * "options" parameter that holds all of the missing parameters
-     *
      * @see https://eslint.org/docs/rules/max-params
      */
     "max-params": ["error", 4],
 
     /**
      * Sort imports
-     *
      * @see https://github.com/lydell/eslint-plugin-simple-import-sort
      */
     "simple-import-sort/imports": "error",
@@ -180,6 +184,51 @@ module.exports = {
 
     // No unused imports or variables. Convenient for pre-commit hook.
     "@typescript-eslint/no-unused-vars": 2,
+
+    // JSdoc Rules
+    "jsdoc/require-jsdoc": [
+      "error",
+      {
+        require: {
+          ArrowFunctionExpression: false,
+          ClassDeclaration: true,
+          ClassExpression: true,
+          FunctionDeclaration: true,
+          FunctionExpression: true,
+          MethodDefinition: true,
+        },
+        contexts: [
+          {
+            context: "TSPropertySignature",
+            inlineCommentBlock: true,
+          },
+          "TSEnumDeclaration",
+          "TSTypeAliasDeclaration",
+          "FunctionDeclaration",
+          "ClassDeclaration",
+        ],
+      },
+    ],
+    "jsdoc/check-types": ["error"],
+    "jsdoc/check-param-names": ["error", { checkDestructured: false }],
+    "jsdoc/require-returns": ["error"],
+    "jsdoc/no-types": ["error"],
+    "jsdoc/require-param": ["error", { checkDestructured: false }],
+    "jsdoc/require-param-description": ["error"],
+    "jsdoc/require-returns-description": ["error"],
+    "jsdoc/require-hyphen-before-param-description": ["error"],
+    "jsdoc/require-description": [
+      "error",
+      {
+        contexts: [
+          "TSPropertySignature",
+          "TSEnumDeclaration",
+          "TSTypeAliasDeclaration",
+          "FunctionDeclaration",
+          "ClassDeclaration",
+        ],
+      },
+    ],
 
     // //////// //
     // Warnings //
@@ -221,6 +270,15 @@ module.exports = {
         "no-unused-expressions": 0,
         // Give a bit more leeway in test files
         "max-lines": ["warn", 450],
+        "jsdoc/require-jsdoc": 0,
+        "import/no-extraneous-dependencies": [
+          "error",
+          {
+            devDependencies: true,
+            optionalDependencies: false,
+            peerDependencies: false,
+          },
+        ],
       },
     },
     {

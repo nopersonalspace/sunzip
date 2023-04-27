@@ -26,7 +26,8 @@
     "test": "mocha",
     "semantic-release": "semantic-release",
     "prepack": "npm run build",
-    "depcheck": "node scripts/depcheck.js"
+    "depcheck": "node scripts/depcheck.js",
+    "jsdoc": "jsdoc -r src/"
   },
   "release": {
     "branches": [
@@ -101,6 +102,7 @@
     "@typescript-eslint/parser": "^5.58.0",
     "adm-zip": "^0.5.10",
     "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
     "depcheck": "^1.4.3",
     "esbuild": "^0.17.18",
     "eslint": "^8.38.0",
@@ -110,9 +112,11 @@
     "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jsdoc": "^43.1.1",
     "eslint-plugin-mocha": "^10.1.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "eslint-plugin-unicorn": "^41.0.0",
+    "jsdoc": "^4.0.2",
     "mocha": "^10.0.0",
     "prettier": "^2.6.2",
     "promisify": "0.0.3",
@@ -126,9 +130,6 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "binary-parser": "^2.2.1",
-    "chai-as-promised": "^7.1.1",
-    "memfs": "^3.5.0",
-    "yauzl": "^2.10.0"
+    "binary-parser": "^2.2.1"
   }
 }

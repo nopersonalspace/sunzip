@@ -3,17 +3,28 @@ import { Parser as BinaryParser } from "binary-parser";
 import { PassThrough, pipeline, Transform, TransformCallback } from "stream";
 import zlib from "zlib";
 
+import { Entry } from "./entry";
 import { InvalidZipError } from "./errors";
 
 export interface OutStream {
+  /** The stream itself */
   stream: PassThrough;
+  /** File metadata about the unzipped file */
   fileMetadata: Record<string, any>;
+  /** Size limit in bytes */
   limit: number;
+  /** Amount written out in bytes */
   written: number;
+  /** The file size (uncompressed) in bytes */
   size: number;
+  /** Is the file a directory? */
   isDirectory: boolean;
 }
 
+/**
+ * Mode represents the different states the FSM might be in as it
+ * progresses through the process of reading the zip file.
+ */
 enum Mode {
   LocalFileHeader = "LOCAL_FILE_HEADER",
   FileData = "FILE_DATA",
@@ -28,16 +39,19 @@ enum Mode {
  * This interface allows us to have typed 'entry' emissions.
  */
 export declare interface UnzipStream extends Transform {
-  on(event: "entry", listener: (entry: OutStream) => void): this;
+  on(event: "entry", listener: (entry: Entry) => void): this;
   on(event: "error", listener: (error: Error) => void): this;
   on(event: string, listener: Function): this;
 }
 
+/**
+ * UnzipStream is the main class, used to perform the unzipping
+ */
 export class UnzipStream extends Transform {
   // TODO: Not sure we need this as a seperate object from entry
-  outStreamInfo: OutStream;
+  outStream = new PassThrough();
 
-  entry: PassThrough;
+  entry: Entry;
 
   chunks: Buffer[] = [];
 
@@ -46,28 +60,27 @@ export class UnzipStream extends Transform {
   beforeFirstData = true;
 
   // TODO: We need the ability to pass in arguments
+  /**
+   *
+   */
   constructor() {
     super({ objectMode: true, highWaterMark: 50 });
 
-    this.outStreamInfo = {
-      stream: new PassThrough(), // for now, we'll make the output stream a new pass through
+    this.entry = new Entry({
       fileMetadata: {},
       limit: 0,
       written: 0,
       size: 0,
       isDirectory: false,
-    };
-
-    this.entry = new PassThrough();
+    });
 
     this.mode = Mode.ReadingNextFlag;
   }
 
   /**
    * Assembles the local file header using a buffer captured from the input stream
-   *
    * @param bytes - The current buffer, starting at the local file header flax
-   * @returns: A buffer with the rest of the bytes that aren't part of the header
+   * @returns A buffer with the rest of the bytes that aren't part of the header
    */
   assembleLocalFileHeader(
     bytes = Buffer.concat(this.chunks)
@@ -118,6 +131,7 @@ export class UnzipStream extends Transform {
   /**
    * Looks at the byte flag to decide which mode to put the FSM into
    * @param bytes - The bytes containing the flag
+   * @returns A new mode for the FSM
    */
   _stateFromFlag(bytes = Buffer.concat(this.chunks)): Mode {
     const flagParser = new BinaryParser()
@@ -146,116 +160,112 @@ export class UnzipStream extends Transform {
     }
   }
 
+  /**
+   *
+   */
   _createEntryStream(): void {
-    if (this.outStreamInfo.isDirectory) {
+    if (this.entry.isDirectory) {
       // Special case for a directory because there is no file data
       // We want to emit an empty stream with just the metadata
-      this.emit("entry", {
-        ...this.outStreamInfo,
-        stream: null,
-      });
+      this.emit("entry", this.entry);
 
       return;
     }
-    if (this.outStreamInfo.fileMetadata.compressionMethod > 0) {
-      this.entry = new PassThrough();
+    if (this.entry.fileMetadata.compressionMethod > 0) {
       const inflater = zlib.createInflateRaw();
       // inflater
       //   .on("end", () => {
       //     console.log(
       //       "STREAM ENDED - inflater",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("finish", () => {
       //     console.log(
       //       "STREAM FINISHED - inflater",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("close", () => {
       //     console.log(
       //       "STREAM CLOSED - inflater",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("error", (e) => {
       //     console.log(
       //       "STREAM ERROR - inflater",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   });
-      // this.outStreamInfo.stream
+      // this.outStream
       //   .on("end", () => {
       //     console.log(
       //       "STREAM ENDED - outStreamInfo.stream",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("finish", () => {
       //     console.log(
       //       "STREAM FINISHED - outStreamInfo.stream",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("close", () => {
       //     console.log(
       //       "STREAM CLOSED - outStreamInfo.stream",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("error", () => {
       //     console.log(
       //       "STREAM ERROR - outStreamInfo.stream",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   });
 
       // this.entry
       //   .on("end", () => {
-      //     console.log(
-      //       "STREAM ENDED - entry",
-      //       this.outStreamInfo.fileMetadata.fileName
-      //     );
+      //     console.log("STREAM ENDED - entry", this.entry.fileMetadata.fileName);
       //   })
       //   .on("finish", () => {
       //     console.log(
       //       "STREAM FINISHED - entry",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("close", () => {
       //     console.log(
       //       "STREAM CLOSED - entry",
-      //       this.outStreamInfo.fileMetadata.fileName
+      //       this.entry.fileMetadata.fileName
       //     );
       //   })
       //   .on("error", () => {
-      //     console.log(
-      //       "STREAM ERROR - entry",
-      //       this.outStreamInfo.fileMetadata.fileName
-      //     );
+      //     console.log("STREAM ERROR - entry", this.entry.fileMetadata.fileName);
       //   });
 
-      pipeline(this.outStreamInfo.stream, inflater, this.entry, (e) => {
+      pipeline(this.outStream, inflater, this.entry, (e) => {
         if (e) {
           this.emit("error", e);
         }
       });
     } else {
-      pipeline(this.outStreamInfo.stream, this.entry, (e) => {
+      // this.entry = new Entry(this.outStreamInfo);
+      pipeline(this.outStream, this.entry, (e) => {
         if (e) {
           this.emit("error", e);
         }
       });
     }
 
-    this.emit("entry", {
-      ...this.outStreamInfo,
-      stream: this.entry,
-    });
+    this.emit("entry", this.entry);
   }
 
+  /**
+   * This function processes the next chunk according to the state of the FSM
+   * @param encoding - The encoding of the buffer chunks
+   * @param callback - The transform stream callback from _transform()
+   */
   _processNextChunk(
     encoding: BufferEncoding,
     callback: TransformCallback
@@ -273,14 +283,13 @@ export class UnzipStream extends Transform {
 
       case Mode.LocalFileHeader: {
         // Reset output stream
-        this.outStreamInfo = {
-          stream: new PassThrough(), // for now, we'll make the output stream a new pass through
+        this.entry = new Entry({
           fileMetadata: {},
           limit: 0,
           written: 0,
           size: 0,
           isDirectory: false,
-        };
+        });
 
         const localFileHeader = this.assembleLocalFileHeader(
           Buffer.concat(this.chunks)
@@ -291,8 +300,8 @@ export class UnzipStream extends Transform {
           this.chunks = [localFileHeader.rest];
 
           // Set the length of the output file
-          this.outStreamInfo.size = localFileHeader.compressedSize;
-          this.outStreamInfo.fileMetadata = localFileHeader;
+          this.entry.size = localFileHeader.compressedSize;
+          this.entry.fileMetadata = localFileHeader;
 
           this._createEntryStream();
 
@@ -300,8 +309,8 @@ export class UnzipStream extends Transform {
           callback();
         } else if (localFileHeader) {
           this.mode = Mode.ReadingNextFlag;
-          this.outStreamInfo.isDirectory = true;
-          this.outStreamInfo.fileMetadata = localFileHeader;
+          this.entry.isDirectory = true;
+          this.entry.fileMetadata = localFileHeader;
           this.chunks = [localFileHeader.rest];
 
           this._createEntryStream();
@@ -320,28 +329,25 @@ export class UnzipStream extends Transform {
         const allBuffer = Buffer.concat(this.chunks);
 
         // Slice the file out of the buffer
-        const sliced = allBuffer.slice(
-          0,
-          this.outStreamInfo.size - this.outStreamInfo.written
-        );
+        const sliced = allBuffer.slice(0, this.entry.size - this.entry.written);
 
         // The rest of the buffer, after the file data. Probably a header of some kind.
         const rest = allBuffer.slice(
-          this.outStreamInfo.size - this.outStreamInfo.written,
+          this.entry.size - this.entry.written,
           allBuffer.length
         );
 
         // Write file data to output stream
-        this.outStreamInfo.stream.write(sliced, encoding, callback);
-        this.outStreamInfo.written += sliced.length;
+        this.outStream.write(sliced, encoding, callback);
+        this.entry.written += sliced.length;
 
         // Reset the chunks, since we've passed the data along
         this.chunks = [];
         // TODO: What happens if it's exactly 0?
         if (rest.length > 0) {
           // End file output stream
+          // TODO: Do we really want to end the stream manually like this? Seems to work either way
           // this.entry.end(undefined, encoding);
-          this.outStreamInfo.stream.end(undefined, encoding);
 
           // Queue up next state
           this.mode = Mode.ReadingNextFlag;
@@ -363,6 +369,12 @@ export class UnzipStream extends Transform {
     }
   }
 
+  /**
+   * The main _transform() function, from the parent class TransformStream
+   * @param chunk - The next chunk of input data
+   * @param encoding - The encoding of the chunk
+   * @param callback - The callback. Used to pass along errors, and to get the next chunk
+   */
   _transform(
     chunk: any,
     encoding: BufferEncoding,
@@ -387,6 +399,11 @@ export class UnzipStream extends Transform {
     }
   }
 
+  /**
+   * _flush() is from the parent class TransformStream. It's called when it's time to flush the bytes stored
+   * in memory downstream.
+   * @param callback - The _transform() callback
+   */
   _flush(callback: any): any {
     // TODO: Getting a 'BAD FILE DESCRIPTOR' error when the central directory is hit
     if (Buffer.concat(this.chunks).length > 0) {
