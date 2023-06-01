@@ -364,6 +364,11 @@ export class UnzipStream extends Transform {
           // TODO: Do we really want to end the stream manually like this? Seems to work either way
           // this.entry.end(undefined, encoding);
 
+          // Kill and re-make the outStream. This prevents memory issues and
+          // stops node from emitting MaxListenersExceededWarning
+          this.outStream.end();
+          this.outStream = new PassThrough();
+
           // Queue up next state
           this.mode = Mode.ReadingNextFlag;
           this.chunks = [rest];
