@@ -1,4 +1,5 @@
 # Unzippopotamus
+
 <p align="center" width="100%">
     <img width="33%" src="https://user-images.githubusercontent.com/740503/231022914-a150c0ea-4e67-4779-838f-ded270ddd9c3.svg">
 </p>
@@ -28,6 +29,11 @@ The goal of this library is to create a performant, easy to use, and fault toler
 - [ZIP (file format) Wikipedia](https://github.com/transcend-io/main/pull/21920)
 - [libzip ZIP format specification document](https://libzip.org/specifications/appnote_iz.txt)
 - [libzip extra fields documentation](https://libzip.org/specifications/extrafld.txt)
+
+## Attributions
+
+- [unzip-stream](https://github.com/mhr3/unzip-stream) This library was created to be a replacement for `unzip-stream`. Many of the implementation decisions I made were inspired by this library.
+- [yauzl](https://github.com/thejoshwolfe/yauzl) `yauzl` is a great library, and the recommended library to use if you don't need a streaming interface. `unzippopotamus` uses some of `yazul`s test zip files in its own tests.
 
 ## Functions
 

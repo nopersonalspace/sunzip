@@ -265,7 +265,7 @@ module.exports = {
      * In test files, we allow them to be a bit longer
      */
     {
-      files: ["**/*.spec.ts"],
+      files: ["**/*.spec.ts", "**/tests/helpers/*"],
       rules: {
         "no-unused-expressions": 0,
         // Give a bit more leeway in test files

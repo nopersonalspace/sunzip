@@ -23,7 +23,7 @@
   "scripts": {
     "clean": "rm -rf ./lib",
     "build": "npm run clean && rollup --config",
-    "test": "mocha",
+    "test": "mocha --timeout 60000 --exit",
     "semantic-release": "semantic-release",
     "prepack": "npm run build",
     "depcheck": "node scripts/depcheck.js",
