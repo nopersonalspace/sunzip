@@ -59,6 +59,8 @@ export class UnzipStream extends Transform {
 
   beforeFirstData = true;
 
+  bytesProcessed = 0;
+
   // TODO: We need the ability to pass in arguments
   /**
    *
@@ -100,7 +102,7 @@ export class UnzipStream extends Transform {
       .uint32("uncompressedSize")
       .uint16("fileNameLength")
       .uint16("extraFieldLength")
-      .string("fileName", { length: "fileNameLength" })
+      .buffer("fileNameBytes", { length: "fileNameLength" })
       .array("extraField", {
         type: new BinaryParser()
           .endianness("little")
@@ -113,8 +115,21 @@ export class UnzipStream extends Transform {
 
     try {
       const localFileHeader = localFileHeaderParser.parse(bytes);
-      if (localFileHeader.signature.equals(Buffer.from("504B0304", "hex"))) {
-        return localFileHeader;
+
+      if (
+        // Signature is the correct local file header flag
+        localFileHeader.signature.equals(Buffer.from("504B0304", "hex")) &&
+        // Extra fields are not cutoff
+        localFileHeader.extraField.every(
+          (field: any) => field.dataSize === field.data.length
+        ) &&
+        // File name not cutoff
+        localFileHeader.fileNameLength === localFileHeader.fileNameBytes.length
+      ) {
+        return {
+          ...localFileHeader,
+          fileName: localFileHeader.fileNameBytes.toString("utf8"),
+        };
       }
       return undefined;
     } catch (e) {
@@ -380,6 +395,7 @@ export class UnzipStream extends Transform {
     encoding: BufferEncoding,
     callback: TransformCallback
   ): void {
+    this.bytesProcessed += chunk.length;
     try {
       // Special case, if no data has been read yet then we know the
       // first bytes should be the local file header signature
